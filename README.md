@@ -4,6 +4,7 @@
 ## Cool, what does it do?
 * **Fix recently viewed panel when user has no userdata**
 * **Add medal counts to rarity rankings**
+* **Add more info to unachieved medals sections**
 * Make user progresion dialogs simpler
 
 ## Thats very cool. How do i get this?
