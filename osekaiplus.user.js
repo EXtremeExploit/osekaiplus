@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         osekaiplus
 // @namespace    https://pedro.moe
-// @version      1.0.0
+// @version      1.1.0
 // @description  Show medal rankings count, make restriction banner smaller and other stuff
 // @author       EXtemeExploit
-// @match        https://osekai.net/*
+// @match        http://osekai.net/*
 // @match        https://osekai.net/*
 
 // @noframes
@@ -31,7 +31,10 @@
 
     function reloadosekaiPlus() {
         if (document.URL.startsWith("https://osekai.net/rankings/?ranking=Medals&type=Rarity"))
-            setTimeout(loadRarities, 2000);
+            setTimeout(loadRarities, 500);
+
+        if (document.URL.startsWith('https://osekai.net/medals/'))
+            setTimeout(loadMedalsFilter, 0);
 
         function loadRarities() {
             var xhr = new XMLHttpRequest();
@@ -68,7 +71,6 @@
         }
 
         function applyMedalRarities() {
-            console.log("Applying medal rarities")
             var iteration = getCurrentPage() * 50;
             let len = document.getElementsByClassName("rankings__cascade__content").length
             for (let i = 0; i < len; i++) {
@@ -79,6 +81,17 @@
                     document.getElementsByClassName("rankings__cascade__content")[i].innerHTML = inhtml
                 }
             }
+        }
+
+
+        function loadMedalsFilter() {
+            if (medalsGetUnobtainedFilterStatus()) {
+                filterAchieved();
+            }
+        }
+
+        function medalsGetUnobtainedFilterStatus() {
+            return document.getElementsByClassName('osekai__checkbox')[1].checked
         }
     }
 
