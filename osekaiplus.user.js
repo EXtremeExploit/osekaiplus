@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osekaiplus
 // @namespace    https://pedro.moe
-// @version      1.4.1
+// @version      1.4.2
 // @description  Show medal rankings count, make restriction banner smaller and other stuff
 // @author       EXtemeExploit
 // @match        http://osekai.net/*
@@ -111,10 +111,7 @@
                     for (let i = 0; i < progressMedalsCount; i++) {
                         document.getElementsByClassName("profiles__unachievedmedals-section-progress-inner-top")[i].children[0].children[0].remove()
                     }
-                    deletedLowerTierProgressText = true
-                    clearInterval(profilesPatchedIntervalID)
                 }
-
                 let sectionsCount = document.getElementsByClassName("profiles__unachievedmedals-section-header-right").length
                 for (var i = 0; i < sectionsCount; i++) {
                     let sectionHas = parseInt(document.getElementsByClassName("profiles__unachievedmedals-section-header-right")[i].children[0].innerHTML);
@@ -124,6 +121,8 @@
                     inhtml += ` <span id="unobtained_progress_">(${((sectionHas / sectionTotal) * 100).toFixed(0)}% | ${sectionTotal - sectionHas} remaining)</span>`
                     document.getElementsByClassName("profiles__unachievedmedals-section-header-right")[i].innerHTML = inhtml;
                 }
+                deletedLowerTierProgressText = true
+                clearInterval(profilesPatchedIntervalID)
 
             }
         }
