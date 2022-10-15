@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osekaiplus
 // @namespace    https://pedro.moe
-// @version      1.1.0
+// @version      1.2.0
 // @description  Show medal rankings count, make restriction banner smaller and other stuff
 // @author       EXtemeExploit
 // @match        http://osekai.net/*
@@ -35,6 +35,9 @@
 
         if (document.URL.startsWith('https://osekai.net/medals/'))
             setTimeout(loadMedalsFilter, 0);
+
+        if (document.URL.startsWith("https://osekai.net/profiles/?"))
+            profilesDeleteLowerTierProgressText();
 
         function loadRarities() {
             var xhr = new XMLHttpRequest();
@@ -92,6 +95,21 @@
 
         function medalsGetUnobtainedFilterStatus() {
             return document.getElementsByClassName('osekai__checkbox')[1].checked
+        }
+
+        // TODO: Do this when profile finish loading instead of autoscroll to Y0
+        function profilesDeleteLowerTierProgressText() {
+            document.addEventListener('scroll', (e) => {
+                if (window.scrollY == 0) {
+                    let progressMedalsCount = document.getElementsByClassName("profiles__unachievedmedals-section-progress-inner-top").length
+                    let hasProgressMedals = progressMedalsCount > 0
+                    if (hasProgressMedals) {
+                        for (let i = 0; i < progressMedalsCount; i++) {
+                            document.getElementsByClassName("profiles__unachievedmedals-section-progress-inner-top")[i].children[0].children[0].remove()
+                        }
+                    }
+                }
+            });
         }
     }
 
