@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osekaiplus
 // @namespace    https://pedro.moe
-// @version      1.4.2
+// @version      1.5.0
 // @description  Show medal rankings count, make restriction banner smaller and other stuff
 // @author       EXtemeExploit
 // @match        http://osekai.net/*
@@ -43,6 +43,27 @@
 
         if (document.URL.startsWith("https://osekai.net/profiles/?"))
             profilesPatchedIntervalID = setInterval(profilesPatches, 250);
+
+        simplifyRescrictionBanner();
+
+
+        function simplifyRescrictionBanner() {
+            // Only apply is the rescriction banner exists
+            if (document.getElementsByClassName("osekai__navbar-restriction").length) {
+                document.getElementsByClassName("osekai__navbar-restriction")[0].remove();
+
+                // Put Account restriction text
+                let inhtml = document.getElementsByClassName('osekai__navbar-right')[0].innerHTML
+                inhtml = `<p>Account Restricted</p>${inhtml}`
+                document.getElementsByClassName('osekai__navbar-right')[0].innerHTML = inhtml;
+
+                // Get rid of the extra padding, may break if there is more than 1 banner
+                let extraheight = parseInt(document.body.attributeStyleMap.getAll("--extraheight")[0][0]);
+
+                let shouldheight = navheight - extraheight;
+                document.body.attributeStyleMap.set('--navheight', shouldheight + "px")
+            }
+        }
 
         function loadRarities() {
             var xhr = new XMLHttpRequest();
