@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osekaiplus
 // @namespace    https://pedro.moe
-// @version      1.5.0
+// @version      1.5.1
 // @description  Show medal rankings count, make restriction banner smaller and other stuff
 // @author       EXtemeExploit
 // @match        http://osekai.net/*
@@ -62,6 +62,7 @@
 
                 let shouldheight = navheight - extraheight;
                 document.body.attributeStyleMap.set('--navheight', shouldheight + "px")
+                document.body.attributeStyleMap.set('--extraheight', "0px") // Fix home dropbox
             }
         }
 
