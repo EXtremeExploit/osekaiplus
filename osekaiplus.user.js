@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osekaiplus
 // @namespace    https://pedro.moe
-// @version      1.3.0
+// @version      1.3.1
 // @description  Show medal rankings count, make restriction banner smaller and other stuff
 // @author       EXtemeExploit
 // @match        http://osekai.net/*
@@ -27,10 +27,16 @@
     var MEDALS_RARITY_URL = "https://osekai.net/rankings/api/upload/scripts-rust/down_rarity.php"
     var MedalsRarityArray = []
 
+    var deletedLowerTierProgressText = false
+    var deletedLowerTierProgressTextId
+
+    //document.getElementsByClassName("profiles__unachievedmedals-section-header-right")
+
 
     $(document).ready(reloadosekaiPlus);
     document.addEventListener('DOMContentLoaded', () => {
-        LoadRecentlyViewed = LoadRecentlyViewedPatched
+        // reloadosekaiPlus()
+        if (typeof LoadRecentlyViewed !== 'undefined') LoadRecentlyViewed = LoadRecentlyViewedPatched
     })
 
     function reloadosekaiPlus() {
@@ -38,7 +44,7 @@
             setTimeout(loadRarities, 500);
 
         if (document.URL.startsWith("https://osekai.net/profiles/?"))
-            profilesDeleteLowerTierProgressText();
+            deletedLowerTierProgressTextId = setInterval(profilesDeleteLowerTierProgressText, 250);
 
         function loadRarities() {
             var xhr = new XMLHttpRequest();
@@ -74,6 +80,7 @@
             return parseInt(element.innerHTML) - 1;
         }
 
+        // TODO: find a way to apply this on normal website navigation
         function applyMedalRarities() {
             var iteration = getCurrentPage() * 50;
             let len = document.getElementsByClassName("rankings__cascade__content").length
@@ -87,22 +94,33 @@
             }
         }
 
-        // TODO: Do this when profile finish loading instead of autoscroll to Y0
+        function isProfileLoading() {
+            let e = document.getElementById("global_loading_overlay")
+            return e != null
+        }
+
+        function okToDeleteLowerTierText() {
+            let e = document.getElementsByClassName("profiles__unachievedmedals-section-progress-inner-top")
+
+            return e != null && !isProfileLoading()
+        }
+
         function profilesDeleteLowerTierProgressText() {
-            document.addEventListener('scroll', (e) => {
-                if (window.scrollY == 0) {
-                    let progressMedalsCount = document.getElementsByClassName("profiles__unachievedmedals-section-progress-inner-top").length
-                    let hasProgressMedals = progressMedalsCount > 0
-                    if (hasProgressMedals) {
-                        for (let i = 0; i < progressMedalsCount; i++) {
-                            document.getElementsByClassName("profiles__unachievedmedals-section-progress-inner-top")[i].children[0].children[0].remove()
-                        }
+            console.log("profilesDeleteLowerTierProgressText")
+            while (!deletedLowerTierProgressText && okToDeleteLowerTierText()) {
+                console.log("whileprofilesDeleteLowerTierProgressText")
+                let progressMedalsCount = document.getElementsByClassName("profiles__unachievedmedals-section-progress-inner-top").length
+                let hasProgressMedals = progressMedalsCount > 0
+                if (hasProgressMedals) {
+                    for (let i = 0; i < progressMedalsCount; i++) {
+                        document.getElementsByClassName("profiles__unachievedmedals-section-progress-inner-top")[i].children[0].children[0].remove()
                     }
+                    deletedLowerTierProgressText = true
+                    clearInterval(deletedLowerTierProgressTextId)
                 }
-            });
+            }
         }
     }
-
 })();
 
 LoadRecentlyViewedPatched = () => {
