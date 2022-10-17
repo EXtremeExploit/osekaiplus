@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osekaiplus
 // @namespace    https://pedro.moe
-// @version      1.7.0
+// @version      1.7.1
 // @description  Show medal rankings count, make restriction banner smaller and other stuff
 // @author       EXtemeExploit
 // @match        http://osekai.net/*
@@ -53,12 +53,8 @@
                 inhtml = `<p>Account Restricted</p>${inhtml}`
                 document.getElementsByClassName('osekai__navbar-right')[0].innerHTML = inhtml;
 
-                // Get rid of the extra padding, may break if there is more than 1 banner
-                let extraheight = parseInt(document.body.attributeStyleMap.getAll("--extraheight")[0][0]);
-
-                let shouldheight = navheight - extraheight;
-                document.body.attributeStyleMap.set('--navheight', shouldheight + "px")
-                document.body.attributeStyleMap.set('--extraheight', "0px") // Fix home dropbox
+                // defined by osekai to position navbar and content accordingly
+                positionNav();
             }
         }
 
