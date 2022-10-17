@@ -3,7 +3,7 @@
 
 ## Cool, what does it do?
 * **Fix recently viewed panel when user has no userdata**
-* **Add medal counts to rarity rankings**
+* **Add medal counts**
 * **Add more info to unachieved medals sections**
 * **Add colors to users in rankings**
 * Make user progresion dialogs simpler

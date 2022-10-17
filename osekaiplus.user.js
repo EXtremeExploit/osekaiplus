@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osekaiplus
 // @namespace    https://pedro.moe
-// @version      1.6.0
+// @version      1.7.0
 // @description  Show medal rankings count, make restriction banner smaller and other stuff
 // @author       EXtemeExploit
 // @match        http://osekai.net/*
@@ -25,7 +25,7 @@
     "use strict";
 
     var MEDALS_RARITY_URL = "https://osekai.net/rankings/api/upload/scripts-rust/down_rarity.php"
-    var MedalsRarityArray = []
+    var MedalsRarityArray = [] // This one is sorted by rarity
 
     $(document).ready(reloadosekaiPlus);
 
@@ -35,9 +35,10 @@
     })
 
     function reloadosekaiPlus() {
-        setInterval(giveMedalsRarityCountLoader, 250);
+        setInterval(giveMedalsRarityRankingCountLoader, 250);
         setInterval(giveColorsToUsersInRankingsLoader, 250);
         setInterval(profilesPatchesLoader, 250)
+        setInterval(giveMedalsRarityCountLoader, 250)
 
         simplifyRescrictionBanner(); // This doesn't need an interval
 
@@ -67,7 +68,7 @@
                 xhr.open('GET', MEDALS_RARITY_URL, true);
                 xhr.send();
                 xhr.onreadystatechange = function () {
-                    if (xhr.readyState === 3 && xhr.status === 200) {
+                    if (xhr.readyState === 4 && xhr.status === 200) {
                         var oResponse = JSON.parse(xhr.responseText);
                         resolve(oResponse.sort(function (a, b) {
                             return a.count - b.count
@@ -86,16 +87,16 @@
             return parseInt(element.innerHTML) - 1;
         }
 
-        async function giveMedalsRarityCountLoader() {
+        async function giveMedalsRarityRankingCountLoader() {
             if (document.URL.startsWith("https://osekai.net/rankings/?ranking=Medals&type=Rarity")) {
                 // Want to get medals rarity count first, await it so no race condition
                 if (MedalsRarityArray.length == 0)// Only make the request if needed
                     MedalsRarityArray = await getMedalsCount();
-                giveMedalsRarityCount();
+                giveMedalsRarityRankingCount();
             }
         }
 
-        async function giveMedalsRarityCount() {
+        async function giveMedalsRarityRankingCount() {
             if (document.getElementsByClassName("osekai__pagination_item-active")[0] == null) return; // page isn't finished loading yet
             var iteration = getCurrentPage() * 50;
             let len = document.getElementsByClassName("rankings__cascade__content").length
@@ -154,6 +155,28 @@
                 inhtml += ` <span id="unobtained_progress_">(${((sectionHas / sectionTotal) * 100).toFixed(0)}% | ${sectionTotal - sectionHas} remaining)</span>`
                 document.getElementsByClassName("profiles__unachievedmedals-section-header-right")[i].innerHTML = inhtml;
             }
+        }
+
+        async function giveMedalsRarityCountLoader() {
+            if (document.URL.startsWith("https://osekai.net/medals/?")) {
+                // Want to get medals rarity count first, await it so no race condition
+                if (MedalsRarityArray.length == 0)// Only make the request if needed
+                    MedalsRarityArray = await getMedalsCount()
+                giveMedalsRarityCount();
+            }
+        }
+
+        function giveMedalsRarityCount() {
+            if (document.getElementById('strMedalRarity') && document.getElementById('strMedalRarity').innerHTML.endsWith('%')) {
+                let params = new URLSearchParams(window.location.search);
+                let medalID = colMedals[params.get('medal')].MedalID
+                var result = MedalsRarityArray.filter(e => {
+                    return e.id == medalID
+                })
+                document.getElementById('strMedalRarity').innerHTML += ` (${result[0].count})`
+
+            }
+
         }
     }
 })();
