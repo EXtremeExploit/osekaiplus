@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osekaiplus
 // @namespace    https://pedro.moe
-// @version      1.5.1
+// @version      1.6.0
 // @description  Show medal rankings count, make restriction banner smaller and other stuff
 // @author       EXtemeExploit
 // @match        http://osekai.net/*
@@ -27,24 +27,19 @@
     var MEDALS_RARITY_URL = "https://osekai.net/rankings/api/upload/scripts-rust/down_rarity.php"
     var MedalsRarityArray = []
 
-    var deletedLowerTierProgressText = false
-    var profilesPatchedIntervalID;
-
-
-
     $(document).ready(reloadosekaiPlus);
+
+    // Function to override to fix them or something
     document.addEventListener('DOMContentLoaded', () => {
         if (typeof LoadRecentlyViewed !== 'undefined') LoadRecentlyViewed = LoadRecentlyViewedPatched
     })
 
     function reloadosekaiPlus() {
-        if (document.URL.startsWith("https://osekai.net/rankings/?ranking=Medals&type=Rarity"))
-            setTimeout(loadRarities, 500);
+        setInterval(giveMedalsRarityCountLoader, 250);
+        setInterval(giveColorsToUsersInRankingsLoader, 250);
+        setInterval(profilesPatchesLoader, 250)
 
-        if (document.URL.startsWith("https://osekai.net/profiles/?"))
-            profilesPatchedIntervalID = setInterval(profilesPatches, 250);
-
-        simplifyRescrictionBanner();
+        simplifyRescrictionBanner(); // This doesn't need an interval
 
 
         function simplifyRescrictionBanner() {
@@ -66,28 +61,19 @@
             }
         }
 
-        function loadRarities() {
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", MEDALS_RARITY_URL, true);
-            xhr.send();
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 3 && xhr.status === 200) {
-                    var oResponse = JSON.parse(xhr.responseText);
-                    MedalsRarityArray = oResponse.sort(function (a, b) {
-                        return a.count - b.count
-                    });
-                    applyMedalRarities();
+        async function getMedalsCount() {
+            return new Promise(function (resolve, reject) {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', MEDALS_RARITY_URL, true);
+                xhr.send();
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 3 && xhr.status === 200) {
+                        var oResponse = JSON.parse(xhr.responseText);
+                        resolve(oResponse.sort(function (a, b) {
+                            return a.count - b.count
+                        }));
+                    };
                 };
-            };
-            raritiesApplyPageListeners()
-        }
-
-        function raritiesApplyPageListeners() {
-            Array.prototype.forEach.call(document.getElementsByClassName("osekai__pagination")[1].children, (e) => {
-                e.addEventListener('click', () => {
-                    raritiesApplyPageListeners()
-                    applyMedalRarities()
-                })
             });
         }
 
@@ -100,8 +86,17 @@
             return parseInt(element.innerHTML) - 1;
         }
 
-        // TODO: find a way to apply this on normal website navigation
-        function applyMedalRarities() {
+        async function giveMedalsRarityCountLoader() {
+            if (document.URL.startsWith("https://osekai.net/rankings/?ranking=Medals&type=Rarity")) {
+                // Want to get medals rarity count first, await it so no race condition
+                if (MedalsRarityArray.length == 0)// Only make the request if needed
+                    MedalsRarityArray = await getMedalsCount();
+                giveMedalsRarityCount();
+            }
+        }
+
+        async function giveMedalsRarityCount() {
+            if (document.getElementsByClassName("osekai__pagination_item-active")[0] == null) return; // page isn't finished loading yet
             var iteration = getCurrentPage() * 50;
             let len = document.getElementsByClassName("rankings__cascade__content").length
             for (let i = 0; i < len; i++) {
@@ -114,38 +109,50 @@
             }
         }
 
-        function isProfileLoading() {
-            let e = document.getElementById("global_loading_overlay")
-            return e != null
+
+        async function giveColorsToUsersInRankingsLoader() {
+            if (document.URL.startsWith("https://osekai.net/rankings/?ranking=Medals&type=Users"))
+                if (document.getElementsByClassName('strong user_hover_v2').length > 0)
+                    if (document.getElementsByClassName('strong user_hover_v2')[0].style.color == '')
+                        giveColorsToUsersInRankings();
         }
 
-        function okToDeleteLowerTierText() {
-            let e = document.getElementsByClassName("profiles__unachievedmedals-section-progress-inner-top")
 
-            return e != null && !isProfileLoading()
+        async function giveColorsToUsersInRankings() {
+            let usersCount = document.getElementsByClassName('strong user_hover_v2').length
+            for (let i = 0; i < usersCount; i++) {
+                document.getElementsByClassName('strong user_hover_v2')[i].style.color = 'rgb(var(--maincol))';
+            }
         }
 
+        async function profilesPatchesLoader() {
+            if (document.URL.startsWith("https://osekai.net/profiles/?"))
+                profilesPatches();
+        }
+
+        /**
+         * Delete lower tier progress text, more info on unachieved medals headers
+         */
         function profilesPatches() {
-            while (!deletedLowerTierProgressText && okToDeleteLowerTierText()) {
-                let progressMedalsCount = document.getElementsByClassName("profiles__unachievedmedals-section-progress-inner-top").length
-                let hasProgressMedals = progressMedalsCount > 0
-                if (hasProgressMedals) {
-                    for (let i = 0; i < progressMedalsCount; i++) {
-                        document.getElementsByClassName("profiles__unachievedmedals-section-progress-inner-top")[i].children[0].children[0].remove()
-                    }
+            let progressMedalsCount = document.getElementsByClassName("profiles__unachievedmedals-section-progress-inner-top").length
+            let hasProgressMedals = progressMedalsCount > 0
+            if (hasProgressMedals) {
+                for (let i = 0; i < progressMedalsCount; i++) {
+                    if (document.getElementsByClassName("profiles__unachievedmedals-section-progress-inner-top")[i].children[0].children[1] == null) continue;
+                    document.getElementsByClassName("profiles__unachievedmedals-section-progress-inner-top")[i].children[0].children[0].remove()
                 }
-                let sectionsCount = document.getElementsByClassName("profiles__unachievedmedals-section-header-right").length
-                for (var i = 0; i < sectionsCount; i++) {
-                    let sectionHas = parseInt(document.getElementsByClassName("profiles__unachievedmedals-section-header-right")[i].children[0].innerHTML);
-                    let sectionTotal = parseInt(document.getElementsByClassName("profiles__unachievedmedals-section-header-right")[i].children[1].innerHTML.substring(1));
+            }
 
-                    let inhtml = document.getElementsByClassName("profiles__unachievedmedals-section-header-right")[i].innerHTML;
-                    inhtml += ` <span id="unobtained_progress_">(${((sectionHas / sectionTotal) * 100).toFixed(0)}% | ${sectionTotal - sectionHas} remaining)</span>`
-                    document.getElementsByClassName("profiles__unachievedmedals-section-header-right")[i].innerHTML = inhtml;
-                }
-                deletedLowerTierProgressText = true
-                clearInterval(profilesPatchedIntervalID)
+            // Add more info to headers
+            let sectionsCount = document.getElementsByClassName("profiles__unachievedmedals-section-header-right").length
+            for (var i = 0; i < sectionsCount; i++) {
+                if (document.getElementsByClassName("profiles__unachievedmedals-section-header-right")[i].children[2] != null) continue;
+                let sectionHas = parseInt(document.getElementsByClassName("profiles__unachievedmedals-section-header-right")[i].children[0].innerHTML);
+                let sectionTotal = parseInt(document.getElementsByClassName("profiles__unachievedmedals-section-header-right")[i].children[1].innerHTML.substring(1));
 
+                let inhtml = document.getElementsByClassName("profiles__unachievedmedals-section-header-right")[i].innerHTML;
+                inhtml += ` <span id="unobtained_progress_">(${((sectionHas / sectionTotal) * 100).toFixed(0)}% | ${sectionTotal - sectionHas} remaining)</span>`
+                document.getElementsByClassName("profiles__unachievedmedals-section-header-right")[i].innerHTML = inhtml;
             }
         }
     }
