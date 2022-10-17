@@ -13,3 +13,6 @@
 * Install any userscript extension (Tampermonkey,Violentmonkey,Greasemonkey,etc)
 * Click [here](./osekaiplus.user.js?raw=1) and a new tab will open asking you to install it
 * enjoy ig
+
+## I FOUND A BUG I WILL TELL OSEKAI STAFF
+* No, please first check if the bug is still there after the userscript is turned off, don't annoy the staff just for a silly bug they don't even have anything to do, if the bug is only present when the script is on, [open a new issue](https://github.com/EXtremeExploit/osekaiplus/issues/new)
