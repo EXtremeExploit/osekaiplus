@@ -1,0 +1,48 @@
+{
+    "env": {
+        "node": true,
+        "es2020": true
+    },
+    "extends": [
+        "eslint:recommended"
+    ],
+    "parserOptions": {
+        "ecmaVersion": 2020,
+        "sourceType": "script"
+    },
+    "rules": {
+        "no-unused-vars": 1,
+        "indent": [
+            "error",
+            "tab",
+            {
+                "MemberExpression": 1,
+                "SwitchCase": 1
+            }
+        ],
+        "linebreak-style": [
+            "error",
+            "unix"
+        ],
+        "spaced-comment": "error",
+        "quotes": [
+            "error",
+            "single"
+        ],
+        "semi": [
+            "error",
+            "always"
+        ],
+        "comma-spacing": [
+            "error",
+            {
+                "after": true
+            }
+        ],
+        "arrow-parens": [
+            "error"
+        ],
+        "eol-last": "error",
+        "no-global-assign": "off"
+    }
+}
