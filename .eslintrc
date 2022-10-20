@@ -16,6 +16,14 @@
         "window": "readonly",
         // Osekai
         "LoadRecentlyViewed": "writable",
+        "filterAchieved": "writable",
+        "requestMedals": "readonly",
+        "oMedalSection": "readonly",
+        "createXHR": "readonly",
+        "getResponse": "readonly",
+        "tippy": "readonly",
+        "loadMedal": "readonly",
+        "handleUndefined": "readonly",
         "nUserID": "readonly",
         "colMedals": "readonly",
         "positionNav": "readonly"
