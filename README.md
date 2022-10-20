@@ -5,6 +5,7 @@
 * **Fix recently viewed panel when user has no userdata**
 * **Add medal counts**
 * **Add more info to unachieved medals sections**
+* **Medal searching and filtering client based (fast)**
 * **Add colors to users in rankings**
 * Make user progresion dialogs simpler
 * Simplify rescriction banner into a single text, bringing back the screen space
