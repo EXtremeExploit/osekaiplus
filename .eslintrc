@@ -10,6 +10,16 @@
         "ecmaVersion": 2020,
         "sourceType": "script"
     },
+    "globals": {
+        "document": "readonly",
+        "XMLHttpRequest": "readonly",
+        "window": "readonly",
+        // Osekai
+        "LoadRecentlyViewed": "writable",
+        "nUserID": "readonly",
+        "colMedals": "readonly",
+        "positionNav": "readonly"
+    },
     "rules": {
         "no-unused-vars": 1,
         "indent": [

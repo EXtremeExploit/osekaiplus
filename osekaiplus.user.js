@@ -1,18 +1,15 @@
 // ==UserScript==
 // @name        osekaiplus
 // @namespace   https://pedro.moe
-// @version     1.7.2
+// @version     1.7.3
 // @description Improve user experience on osekai.net (osu! medals website)
 // @author      EXtemeExploit
 // @match       http://osekai.net/*
 // @match       https://osekai.net/*
 
 // @noframes
-// @require     https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js
 // @run-at  	document-start
 // ==/UserScript==
-
-/* global $, document, window, XMLHttpRequest, nUserID, colMedals, LoadRecentlyViewed, positionNav */
 
 (() => {
 	'use strict';
@@ -20,10 +17,9 @@
 	var MEDALS_RARITY_URL = 'https://osekai.net/rankings/api/upload/scripts-rust/down_rarity.php';
 	var MedalsRarityArray = []; // This one is sorted by rarity
 
-	$(document).ready(reloadosekaiPlus);
-
-	// Function to override to fix them or something
 	document.addEventListener('DOMContentLoaded', () => {
+		reloadosekaiPlus();
+		// Function to override to fix them or something
 		if (typeof LoadRecentlyViewed !== 'undefined') LoadRecentlyViewed = LoadRecentlyViewedPatched;
 	});
 
@@ -53,11 +49,11 @@
 
 		async function getMedalsCount() {
 			return new Promise((resolve) => {
-				var xhr = new XMLHttpRequest();
+				let xhr = new XMLHttpRequest();
 				xhr.open('GET', MEDALS_RARITY_URL, true);
 				xhr.onload = () => {
 					if (xhr.status === 200) {
-						var oResponse = JSON.parse(xhr.responseText);
+						let oResponse = JSON.parse(xhr.responseText);
 						resolve(oResponse.sort((a, b) => {
 							return a.count - b.count;
 						}));
@@ -87,7 +83,7 @@
 
 		async function giveMedalsRarityRankingCount() {
 			if (document.getElementsByClassName('osekai__pagination_item-active')[0] == null) return; // page isn't finished loading yet
-			var iteration = getCurrentPage() * 50;
+			let iteration = getCurrentPage() * 50;
 			let len = document.getElementsByClassName('rankings__cascade__content').length;
 			for (let i = 0; i < len; i++) {
 				let element = document.getElementsByClassName('rankings__cascade__content')[i];
@@ -135,7 +131,7 @@
 
 			// Add more info to headers
 			let sectionsCount = document.getElementsByClassName('profiles__unachievedmedals-section-header-right').length;
-			for (var i = 0; i < sectionsCount; i++) {
+			for (let i = 0; i < sectionsCount; i++) {
 				if (document.getElementsByClassName('profiles__unachievedmedals-section-header-right')[i].children[2] != null) continue;
 				let sectionHas = parseInt(document.getElementsByClassName('profiles__unachievedmedals-section-header-right')[i].children[0].innerHTML);
 				let sectionTotal = parseInt(document.getElementsByClassName('profiles__unachievedmedals-section-header-right')[i].children[1].innerHTML.substring(1));
@@ -159,13 +155,12 @@
 			if (document.getElementById('strMedalRarity') && document.getElementById('strMedalRarity').innerHTML.endsWith('%')) {
 				let params = new URLSearchParams(window.location.search);
 				let medalID = colMedals[params.get('medal')].MedalID;
-				var result = MedalsRarityArray.filter((e) => {
+				let result = MedalsRarityArray.filter((e) => {
 					return e.id == medalID;
 				});
-				document.getElementById('strMedalRarity').innerHTML += ` (${result[0].count})`;
-
+				let rarityRanking = MedalsRarityArray.map((medal) => medal.id).indexOf(medalID) + 1;
+				document.getElementById('strMedalRarity').innerHTML += ` (${result[0].count} #${rarityRanking})`;
 			}
-
 		}
 	}
 })();
@@ -192,11 +187,13 @@ function LoadRecentlyViewedPatched() {
 
 			for (let i = 0; i < json.length; i++) {
 				if (json[i].userdata == null) continue;
-				html += `<div class="profiles__ranking-user" onclick="loadUser(${json[i].visited_id});"><img src="https://a.ppy.sh/${json[i].visited_id}" class="profiles__ranking-pfp">
-            <div class="profiles__ranking-texts">
-              <p class="profiles__ranking-username">${json[i].userdata.Username}</p>
-            </div>
-            </div>`;
+				html += `
+				<div class="profiles__ranking-user" onclick="loadUser(${json[i].visited_id});">
+					<img src="https://a.ppy.sh/${json[i].visited_id}" class="profiles__ranking-pfp">
+					<div class="profiles__ranking-texts">
+						<p class="profiles__ranking-username">${json[i].userdata.Username}</p>
+					</div>
+				</div>`;
 			}
 
 			document.getElementById('recentlyviewed').innerHTML = html;
