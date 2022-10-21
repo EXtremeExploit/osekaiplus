@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        osekaiplus
 // @namespace   https://pedro.moe
-// @version     1.8.0
+// @version     1.8.1
 // @description Improve user experience on osekai.net (osu! medals website)
 // @author      EXtemeExploit
 // @match       http://osekai.net/*
@@ -204,6 +204,26 @@
 		});
 	}
 
+	async function initColMedals() {
+		return new Promise((resolve) => {
+			var xhr = new XMLHttpRequest();
+			xhr.open('POST', 'https://osekai.net/medals/api/medals.php', true);
+			xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+			xhr.onreadystatechange = function () {
+				document.getElementById('oMedalSection').innerHTML = '';
+				var oResponse = getResponse(xhr);
+				if (handleUndefined(oResponse)) return;
+				Object.keys(oResponse).forEach(function (obj) {
+					if (handleUndefined(obj)) return;
+					oResponse[obj].forEach(function (innerObj) {
+						colMedals[innerObj.Name] = innerObj;
+					});
+				});
+				resolve();
+			};
+			xhr.send('strSearch=');
+		});
+	}
 
 	// Patched functions go here, outside the ready scope
 
@@ -268,93 +288,49 @@
 		}
 	}
 
-	// I can't just change the event listener of the input field, so i have to override the entire thing :skull:
-	// This is super scuffed, but its the best i could do
-	async function requestMedalsPatched(bInit, strKey, strValue, strUrl) {
-		if (bInit) {
-			var xhr = createXHR(strUrl);
-			xhr.send(strKey + '=' + strValue);
+	async function requestMedalsPatched(bInit, strKey, strValue) {
+		if (bInit || Object.values(colMedals).length == 0)  // Init the colMedals object
+			await initColMedals();
 
-			xhr.onreadystatechange = function () {
-				document.getElementById('oMedalSection').innerHTML = '';
-				var oResponse = getResponse(xhr);
-				let strLastRestriction;
-				if (handleUndefined(oResponse)) return;
-				Object.keys(oResponse).forEach(function (obj) {
-					let imgList = '';
-					if (handleUndefined(obj)) return;
-					oResponse[obj].forEach(function (innerObj) {
-						// console.log(innerObj.Name)
-						colMedals[innerObj.Name] = innerObj;
-						if (innerObj.Name == 'chromb') return;
-						if ((typeof strLastRestriction !== 'undefined' && strLastRestriction !== null) && innerObj.Restriction !== strLastRestriction) imgList += '</div><div class="osekai__divider"></div><div class="medals__grid">';
-						imgList += '<div class="medals__grid-medal-container" data-tippy-content="' + innerObj.Name + '">';
-						// if date is not null, and it is less than a week ago, it's new!
-						// console.log(innerObj);
-						if (innerObj.Date != null) {
-							let date = new Date(innerObj.Date);
-							let now = new Date();
-							let diff = now.getTime() - date.getTime();
-							// console.log(diff);
-							if (diff < 604800000) {
-								// console.log("new");
-								imgList += '<div class="new-badge">NEW</div>';
-							}
-						}
-						imgList += '<img onload="medalImageLoaded(this)" onclick="changeState(\'' + innerObj.Name.replace(/'/g, '\\\'') + '\')" alt="' + innerObj.Name + '" id="medal_' + innerObj.MedalID + '"  class="medals__grid-medal lazy" src="' + innerObj.Link + '">';
-						imgList += '</div>';
-						strLastRestriction = innerObj.Restriction;
-					});
-					strLastRestriction = null;
-					oMedalSection.innerHTML += '<section class="osekai__panel"><div class="osekai__panel-header"><p>' + obj + '</p></div><div class="osekai__panel-inner"><div class="medals__grid-container"><div class="medals__grid">' + imgList + '</div></div></div></section>';
-				});
-				tippy('[data-tippy-content]', {
-					appendTo: document.getElementsByClassName('medals__scroller')[0],
-					arrow: true,
-				});
+		document.getElementById('oMedalSection').innerHTML = '';
 
-				if (new URLSearchParams(window.location.search).get('medal') !== null) loadMedal(new URLSearchParams(window.location.search).get('medal'));
-			};
-		} else {
-			// Patched part here :)
-			document.getElementById('oMedalSection').innerHTML = '';
-
-			let colMedalsArray = Object.values(colMedals);
-
-			let filteredMedalsArray = colMedalsArray.filter((e) => {
-				return e.Name.toLowerCase().includes(strValue.toLowerCase());
-			});
-
-			let arr = [];
-			for (const [k, v] of Object.entries(filteredMedalsArray)) {
-				if (arr[v.Grouping] == null) arr[v.Grouping] = [];
-				arr[v.Grouping].push(v);
-			}
-			let strLastRestriction;
-			Object.keys(arr).forEach((obj) => {
-				let imgList = '';
-				arr[obj].forEach((innerObj) => {
-					// console.log(innerObj.Name)
-					arr[innerObj.Name] = innerObj;
-					if (innerObj.Name == 'chromb') return;
-					if ((typeof strLastRestriction !== 'undefined' && strLastRestriction !== null) && innerObj.Restriction !== strLastRestriction) imgList += '</div><div class="osekai__divider"></div><div class="medals__grid">';
-					imgList += '<div class="medals__grid-medal-container" data-tippy-content="' + innerObj.Name + '">';
-					if (innerObj.Date != null) { // It has a date!, check if its less than a week old
-						let date = new Date(innerObj.Date);
-						let now = new Date();
-						let diff = now.getTime() - date.getTime();
-						if (diff < 604800000) {
-							// IT IS!, add the new badge 8)
-							imgList += '<div class="new-badge">NEW</div>';
-						}
-					}
-					imgList += '<img onload="medalImageLoaded(this)" onclick="changeState(\'' + innerObj.Name.replace(/'/g, '\\\'') + '\')" alt="' + innerObj.Name + '" id="medal_' + innerObj.MedalID + '"  class="medals__grid-medal lazy" src="' + innerObj.Link + '">';
-					imgList += '</div>';
-					strLastRestriction = innerObj.Restriction;
-				});
-				strLastRestriction = null;
-				oMedalSection.innerHTML += '<section class="osekai__panel"><div class="osekai__panel-header"><p>' + obj + '</p></div><div class="osekai__panel-inner"><div class="medals__grid-container"><div class="medals__grid">' + imgList + '</div></div></div></section>';
-			});
+		let colMedalsArray = Object.values(colMedals);
+		// Also match description, instructions, solution and medal id
+		let filteredMedalsArray = colMedalsArray.filter((e) => {
+			return e.Name.toLowerCase().includes(strValue.toLowerCase()) ||
+				e.Description?.toLowerCase().includes(strValue.toLowerCase()) ||
+				e.Instructions?.toLowerCase().includes(strValue.toLowerCase()) ||
+				e.Solution?.toLowerCase().includes(strValue.toLowerCase()) ||
+				e.MedalID == parseInt(strValue); // Trust that MedalID will ALWAYS be a number
+		});
+		let filteredMedalsArrayByGroup = [];
+		for (const [k, v] of Object.entries(filteredMedalsArray)) {
+			if (filteredMedalsArrayByGroup[v.Grouping] == null) filteredMedalsArrayByGroup[v.Grouping] = [];
+			filteredMedalsArrayByGroup[v.Grouping].push(v);
 		}
+		let strLastRestriction = null;
+		Object.keys(filteredMedalsArrayByGroup).forEach((group) => {
+			let imgList = '';
+			filteredMedalsArrayByGroup[group].forEach((medal) => {
+				if (medal.Name == 'chromb') return; // ?
+				if (medal.Restriction !== strLastRestriction && strLastRestriction !== null) imgList += '</div><div class="osekai__divider"></div><div class="medals__grid">';
+				imgList += '<div class="medals__grid-medal-container" data-tippy-content="' + medal.Name + '">';
+				if (medal.Date != null) { // It has a date!, check if its less than a week old
+					let date = new Date(medal.Date);
+					let now = new Date();
+					let diff = now.getTime() - date.getTime();
+					if (diff < 604800000) {
+						// IT IS!, add the new badge 8)
+						imgList += '<div class="new-badge">NEW</div>';
+					}
+				}
+				imgList += `<img onload="medalImageLoaded(this)" onclick="changeState('${medal.Name.replace(/'/g, '\\\'')}')" alt="${medal.Name}" id="medal_${medal.MedalID}"  class="medals__grid-medal lazy" src="${medal.Link}">`;
+				imgList += '</div>';
+				strLastRestriction = medal.Restriction;
+			});
+			strLastRestriction = null;
+			oMedalSection.innerHTML += `<section class="osekai__panel"><div class="osekai__panel-header"><p>${group}</p></div><div class="osekai__panel-inner"><div class="medals__grid-container"><div class="medals__grid">${imgList}</div></div></div></section>`;
+		});
+		if (bInit && new URLSearchParams(window.location.search).get('medal') !== null) loadMedal(new URLSearchParams(window.location.search).get('medal'));
 	}
 })();
