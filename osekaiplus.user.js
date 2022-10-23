@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        osekaiplus
 // @namespace   https://pedro.moe
-// @version     1.8.1
+// @version     1.8.2
 // @description Improve user experience on osekai.net (osu! medals website)
 // @author      EXtemeExploit
 // @match       http://osekai.net/*
@@ -210,7 +210,6 @@
 			xhr.open('POST', 'https://osekai.net/medals/api/medals.php', true);
 			xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
 			xhr.onreadystatechange = function () {
-				document.getElementById('oMedalSection').innerHTML = '';
 				var oResponse = getResponse(xhr);
 				if (handleUndefined(oResponse)) return;
 				Object.keys(oResponse).forEach(function (obj) {
@@ -292,28 +291,26 @@
 		if (bInit || Object.values(colMedals).length == 0)  // Init the colMedals object
 			await initColMedals();
 
-		document.getElementById('oMedalSection').innerHTML = '';
-
-		let colMedalsArray = Object.values(colMedals);
-		// Also match description, instructions, solution and medal id
-		let filteredMedalsArray = colMedalsArray.filter((e) => {
-			return e.Name.toLowerCase().includes(strValue.toLowerCase()) ||
-				e.Description?.toLowerCase().includes(strValue.toLowerCase()) ||
-				e.Instructions?.toLowerCase().includes(strValue.toLowerCase()) ||
-				e.Solution?.toLowerCase().includes(strValue.toLowerCase()) ||
-				e.MedalID == parseInt(strValue); // Trust that MedalID will ALWAYS be a number
-		});
 		let filteredMedalsArrayByGroup = [];
-		for (const [k, v] of Object.entries(filteredMedalsArray)) {
-			if (filteredMedalsArrayByGroup[v.Grouping] == null) filteredMedalsArrayByGroup[v.Grouping] = [];
-			filteredMedalsArrayByGroup[v.Grouping].push(v);
+		for (let v of Object.values(colMedals)) {
+			// Match Name, Solution, Description, Instructions and medal id
+			if (v.Name.toLowerCase().includes(strValue.toLowerCase()) ||
+				v.Solution?.toLowerCase().includes(strValue.toLowerCase()) ||
+				v.Description?.toLowerCase().includes(strValue.toLowerCase()) ||
+				v.Instructions?.toLowerCase().includes(strValue.toLowerCase()) ||
+				v.MedalID == parseInt(strValue)) {
+				if (filteredMedalsArrayByGroup[v.Grouping] == null) filteredMedalsArrayByGroup[v.Grouping] = [];
+				filteredMedalsArrayByGroup[v.Grouping].push(v);
+			}
 		}
+
+		document.getElementById('oMedalSection').innerHTML = '';
 		let strLastRestriction = null;
 		Object.keys(filteredMedalsArrayByGroup).forEach((group) => {
 			let imgList = '';
 			filteredMedalsArrayByGroup[group].forEach((medal) => {
-				if (medal.Name == 'chromb') return; // ?
-				if (medal.Restriction !== strLastRestriction && strLastRestriction !== null) imgList += '</div><div class="osekai__divider"></div><div class="medals__grid">';
+				if (medal.Restriction !== strLastRestriction && strLastRestriction !== null)
+					imgList += '</div><div class="osekai__divider"></div><div class="medals__grid">';
 				imgList += '<div class="medals__grid-medal-container" data-tippy-content="' + medal.Name + '">';
 				if (medal.Date != null) { // It has a date!, check if its less than a week old
 					let date = new Date(medal.Date);
@@ -329,8 +326,24 @@
 				strLastRestriction = medal.Restriction;
 			});
 			strLastRestriction = null;
-			oMedalSection.innerHTML += `<section class="osekai__panel"><div class="osekai__panel-header"><p>${group}</p></div><div class="osekai__panel-inner"><div class="medals__grid-container"><div class="medals__grid">${imgList}</div></div></div></section>`;
+			oMedalSection.innerHTML +=
+				`<section class="osekai__panel">
+					<div class="osekai__panel-header">
+						<p>${group}</p>
+					</div>
+					<div class="osekai__panel-inner">
+						<div class="medals__grid-container">
+							<div class="medals__grid">${imgList}</div>
+						</div>
+					</div>
+				</section>`;
 		});
+
+		tippy('[data-tippy-content]', {
+			appendTo: document.getElementsByClassName('medals__scroller')[0],
+			arrow: true,
+		});
+
 		if (bInit && new URLSearchParams(window.location.search).get('medal') !== null) loadMedal(new URLSearchParams(window.location.search).get('medal'));
 	}
 })();
