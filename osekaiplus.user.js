@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        osekaiplus
 // @namespace   https://pedro.moe
-// @version     1.8.2
+// @version     1.8.3
 // @description Improve user experience on osekai.net (osu! medals website)
 // @author      EXtemeExploit
 // @match       http://osekai.net/*
@@ -304,28 +304,27 @@
 			}
 		}
 
-		document.getElementById('oMedalSection').innerHTML = '';
-		let strLastRestriction = null;
+		oMedalSection.innerHTML = '';
 		Object.keys(filteredMedalsArrayByGroup).forEach((group) => {
-			let imgList = '';
+			let strLastRestriction = null;
+			let medalList = '';
 			filteredMedalsArrayByGroup[group].forEach((medal) => {
 				if (medal.Restriction !== strLastRestriction && strLastRestriction !== null)
-					imgList += '</div><div class="osekai__divider"></div><div class="medals__grid">';
-				imgList += '<div class="medals__grid-medal-container" data-tippy-content="' + medal.Name + '">';
+					medalList += '</div><div class="osekai__divider"></div><div class="medals__grid">';
+				medalList += '<div class="medals__grid-medal-container" data-tippy-content="' + medal.Name + '">';
 				if (medal.Date != null) { // It has a date!, check if its less than a week old
 					let date = new Date(medal.Date);
 					let now = new Date();
 					let diff = now.getTime() - date.getTime();
 					if (diff < 604800000) {
 						// IT IS!, add the new badge 8)
-						imgList += '<div class="new-badge">NEW</div>';
+						medalList += '<div class="new-badge">NEW</div>';
 					}
 				}
-				imgList += `<img onload="medalImageLoaded(this)" onclick="changeState('${medal.Name.replace(/'/g, '\\\'')}')" alt="${medal.Name}" id="medal_${medal.MedalID}"  class="medals__grid-medal lazy" src="${medal.Link}">`;
-				imgList += '</div>';
+				medalList += `<img onload="medalImageLoaded(this)" onclick="changeState('${medal.Name.replace(/'/g, '\\\'')}')" alt="${medal.Name}" id="medal_${medal.MedalID}"  class="medals__grid-medal lazy" src="${medal.Link}">`;
+				medalList += '</div>';
 				strLastRestriction = medal.Restriction;
 			});
-			strLastRestriction = null;
 			oMedalSection.innerHTML +=
 				`<section class="osekai__panel">
 					<div class="osekai__panel-header">
@@ -333,7 +332,7 @@
 					</div>
 					<div class="osekai__panel-inner">
 						<div class="medals__grid-container">
-							<div class="medals__grid">${imgList}</div>
+							<div class="medals__grid">${medalList}</div>
 						</div>
 					</div>
 				</section>`;
