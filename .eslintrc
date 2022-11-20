@@ -22,11 +22,15 @@
         "createXHR": "readonly",
         "getResponse": "readonly",
         "tippy": "readonly",
+        "medalImageLoaded": "readonly",
+        "changeState": "readonly",
         "loadMedal": "readonly",
         "handleUndefined": "readonly",
         "nUserID": "readonly",
         "colMedals": "readonly",
-        "positionNav": "readonly"
+        "positionNav": "readonly",
+        "GetStringRawNonAsync":"readonly",
+        "APP_SHORT":"readonly"
     },
     "rules": {
         "no-unused-vars": 1,
