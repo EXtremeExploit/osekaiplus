@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        osekaiplus
 // @namespace   https://pedro.moe
-// @version     1.8.4
+// @version     1.8.5
 // @description Improve user experience on osekai.net (osu! medals website)
 // @author      EXtemeExploit
 // @match       http://osekai.net/*
@@ -57,15 +57,6 @@
 			}
 		}
 
-		/**
-		 * 
-		 * @returns Current page minus 1, so first page is 0
-		 */
-		function getCurrentPage() {
-			let element = document.getElementsByClassName('osekai__pagination_item-active')[0];
-			return parseInt(element.innerHTML) - 1;
-		}
-
 		async function giveMedalsRarityRankingCountLoader() {
 			if (document.URL.startsWith('https://osekai.net/rankings/?ranking=Medals&type=Rarity')) {
 				// Want to get medals rarity count first, await it so no race condition
@@ -77,17 +68,15 @@
 
 		async function giveMedalsRarityRankingCount() {
 			if (document.getElementsByClassName('osekai__pagination_item-active')[0] == null) return; // page isn't finished loading yet
-			let iteration = getCurrentPage() * 50;
 			let len = document.getElementsByClassName('rankings__cascade__content').length;
 			for (let i = 0; i < len; i++) {
 				let element = document.getElementsByClassName('rankings__cascade__content')[i];
 				if (element.innerHTML.startsWith('<p><span>') && element.innerHTML.includes('</span><span class="strong">') && element.innerHTML.endsWith('%</p>')) {
-					let inhtml = element.innerHTML;
-					let count = MedalsRarityArray[iteration].count;
-					let rarity = MedalsRarityArray[iteration].frequency;
-					iteration++;
+					let index = parseInt(element.parentElement.children[0].children[0].children[0].children[0].children[0].children[1].innerHTML)-1;
+					let count = MedalsRarityArray[index].count;
+					let rarity = MedalsRarityArray[index].frequency;
 					element.style.setProperty('width', '210px');
-					inhtml = `<p><span>${GetStringRawNonAsync(APP_SHORT, 'bar.medals.rarity.heldBy')} </span><span class="strong">${rarity}</span>% (${count})</p>`;
+					let inhtml = `<p><span>${GetStringRawNonAsync(APP_SHORT, 'bar.medals.rarity.heldBy')} </span><span class="strong">${rarity}</span>% (${count})</p>`;
 					document.getElementsByClassName('rankings__cascade__content')[i].innerHTML = inhtml;
 				}
 			}
@@ -308,7 +297,7 @@
 			}
 		}
 
-		oMedalSection.innerHTML = '';
+		document.getElementById('oMedalSection').textContent = '';
 		Object.keys(filteredMedalsArrayByGroup).forEach((group) => {
 			let strLastRestriction = null;
 			let grids = [];
@@ -316,6 +305,7 @@
 			filteredMedalsArrayByGroup[group].forEach((medal) => {
 				if (medal.Restriction !== strLastRestriction && strLastRestriction !== null)
 					grid_i++;
+				strLastRestriction = medal.Restriction;
 
 				let medalDiv = document.createElement('div');
 				medalDiv.classList.add('medals__grid-medal-container');
@@ -329,7 +319,7 @@
 						// IT IS!, add the new badge 8)
 						let newBadge = document.createElement('div');
 						newBadge.classList.add('new-badge');
-						newBadge.innerHTML = 'NEW';
+						newBadge.textContent = 'NEW';
 						medalDiv.appendChild(newBadge);
 					}
 				}
@@ -348,10 +338,7 @@
 
 				if (grids[grid_i] == undefined)
 					grids[grid_i] = [];
-
 				grids[grid_i].push(medalDiv);
-
-				strLastRestriction = medal.Restriction;
 			});
 			let section = document.createElement('section');
 			section.classList.add('osekai__panel');
@@ -360,9 +347,8 @@
 			let sectionHeader = document.createElement('div');
 			sectionHeader.classList.add('osekai__panel-header');
 
-
 			let sectionHeaderP = document.createElement('p');
-			sectionHeaderP.innerHTML = group;
+			sectionHeaderP.textContent = group;
 
 			sectionHeader.appendChild(sectionHeaderP);
 			section.appendChild(sectionHeader);
@@ -381,6 +367,7 @@
 				for (let j = 0; j < grids[i].length; j++)
 					medalsContainer.appendChild(grids[i][j]);
 				panelMedalsContainer.appendChild(medalsContainer);
+
 				if (grids[i + 1] != undefined && grids[i + 1] != null) {
 					let dividerDiv = document.createElement('div');
 					dividerDiv.classList.add('osekai__divider');
@@ -396,7 +383,7 @@
 		});
 
 		tippy('[data-tippy-content]', {
-			appendTo: document.getElementById('oMedalSection'),
+			appendTo: document.getElementsByClassName('medals__scroller')[0],
 			arrow: true,
 		});
 
