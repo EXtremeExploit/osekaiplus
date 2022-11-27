@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        osekaiplus
 // @namespace   https://pedro.moe
-// @version     1.8.5
+// @version     1.8.6
 // @description Improve user experience on osekai.net (osu! medals website)
 // @author      EXtemeExploit
 // @match       http://osekai.net/*
@@ -20,7 +20,6 @@
 
 	document.addEventListener('DOMContentLoaded', () => {
 		// Function to override to fix them or something
-		if (typeof LoadRecentlyViewed !== 'undefined') LoadRecentlyViewed = LoadRecentlyViewedPatched;
 		if (typeof filterAchieved !== 'undefined') filterAchieved = filterAchievedPatched;
 		if (typeof requestMedals !== 'undefined') requestMedals = requestMedalsPatched;
 
@@ -218,47 +217,6 @@
 	}
 
 	// Patched functions go here, outside the ready scope
-
-	function LoadRecentlyViewedPatched() {
-		let mostPopular = false;
-		// if the user is logged out, set mostPopular to true
-		if (nUserID == -1) {
-			mostPopular = true;
-		}
-
-		let xhr = new XMLHttpRequest();
-
-		let url = '';
-		if (mostPopular)
-			url = 'https://osekai.net/profiles/api/most_visited';
-		else
-			url = 'https://osekai.net/profiles/api/recent_visits';
-		xhr.open('GET', url, true);
-		xhr.onload = function () {
-			if (this.status == 200) {
-				let json = JSON.parse(this.responseText);
-				let html = '';
-
-				for (let i = 0; i < json.length; i++) {
-					if (json[i].userdata == null) continue;
-					html += `
-				<div class="profiles__ranking-user" onclick="loadUser(${json[i].visited_id});">
-					<img src="https://a.ppy.sh/${json[i].visited_id}" class="profiles__ranking-pfp">
-					<div class="profiles__ranking-texts">
-						<p class="profiles__ranking-username">${json[i].userdata.Username}</p>
-					</div>
-				</div>`;
-				}
-
-				document.getElementById('recentlyviewed').innerHTML = html;
-			} else {
-				console.log('error');
-			}
-		};
-
-		xhr.send();
-	}
-
 	async function filterAchievedPatched(on) {
 		if (MedalsAchievedFilterArray.length == 0) {
 			MedalsAchievedFilterArray = await getMedalsFilterArray();
