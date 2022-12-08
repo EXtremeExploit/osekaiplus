@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        osekaiplus
 // @namespace   https://pedro.moe
-// @version     1.8.6
+// @version     1.8.7
 // @description Improve user experience on osekai.net (osu! medals website)
 // @author      EXtemeExploit
 // @match       http://osekai.net/*
@@ -71,7 +71,7 @@
 			for (let i = 0; i < len; i++) {
 				let element = document.getElementsByClassName('rankings__cascade__content')[i];
 				if (element.innerHTML.startsWith('<p><span>') && element.innerHTML.includes('</span><span class="strong">') && element.innerHTML.endsWith('%</p>')) {
-					let index = parseInt(element.parentElement.children[0].children[0].children[0].children[0].children[0].children[1].innerHTML)-1;
+					let index = parseInt(element.parentElement.children[0].children[0].children[0].children[0].children[0].children[1].innerHTML) - 1;
 					let count = MedalsRarityArray[index].count;
 					let rarity = MedalsRarityArray[index].frequency;
 					element.style.setProperty('width', '210px');
@@ -267,7 +267,6 @@
 
 				let medalDiv = document.createElement('div');
 				medalDiv.classList.add('medals__grid-medal-container');
-				medalDiv.setAttribute('data-tippy-content', medal.Name);
 
 				if (medal.Date != null) { // It has a date!, check if its less than a week old
 					let date = new Date(medal.Date);
@@ -282,6 +281,7 @@
 					}
 				}
 				let medalImg = document.createElement('img');
+				medalImg.setAttribute('data-tippy-content', medal.Name);
 				medalImg.classList.add('medals__grid-medal');
 				medalImg.classList.add('lazy');
 				medalImg.src = medal.Link;
