@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        osekaiplus
 // @namespace   https://pedro.moe
-// @version     1.8.8
+// @version     1.8.9
 // @description Improve user experience on osekai.net (osu! medals website)
 // @author      EXtemeExploit
 // @match       http://osekai.net/*
@@ -340,12 +340,10 @@
 
 				document.getElementById('oMedalSection').appendChild(section);
 			});
-			setTimeout(() => {
-				tippy('[data-tippy-content]', {
-					appendTo: document.getElementsByClassName('medals__scroller')[0],
-					arrow: true
-				});
-			}, 10);
+			tippy('[data-tippy-content]', {
+				appendTo: document.getElementById('oMedalSection'),
+				arrow: true
+			});
 		}, 10);
 
 		if (bInit && new URLSearchParams(window.location.search).get('medal') !== null) loadMedal(new URLSearchParams(window.location.search).get('medal'));
