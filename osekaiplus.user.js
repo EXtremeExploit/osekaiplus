@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        osekaiplus
 // @namespace   https://pedro.moe
-// @version     1.8.7
+// @version     1.8.8
 // @description Improve user experience on osekai.net (osu! medals website)
 // @author      EXtemeExploit
 // @match       http://osekai.net/*
@@ -255,95 +255,98 @@
 			}
 		}
 
-		document.getElementById('oMedalSection').textContent = '';
-		Object.keys(filteredMedalsArrayByGroup).forEach((group) => {
-			let strLastRestriction = null;
-			let grids = [];
-			let grid_i = 0;
-			filteredMedalsArrayByGroup[group].forEach((medal) => {
-				if (medal.Restriction !== strLastRestriction && strLastRestriction !== null)
-					grid_i++;
-				strLastRestriction = medal.Restriction;
+		setTimeout(() => {
+			document.getElementById('oMedalSection').textContent = '';
+			Object.keys(filteredMedalsArrayByGroup).forEach((group) => {
+				let strLastRestriction = null;
+				let grids = [];
+				let grid_i = 0;
+				filteredMedalsArrayByGroup[group].forEach((medal) => {
+					if (medal.Restriction !== strLastRestriction && strLastRestriction !== null)
+						grid_i++;
+					strLastRestriction = medal.Restriction;
 
-				let medalDiv = document.createElement('div');
-				medalDiv.classList.add('medals__grid-medal-container');
+					let medalDiv = document.createElement('div');
+					medalDiv.classList.add('medals__grid-medal-container');
 
-				if (medal.Date != null) { // It has a date!, check if its less than a week old
-					let date = new Date(medal.Date);
-					let now = new Date();
-					let diff = now.getTime() - date.getTime();
-					if (diff < 604800000) {
-						// IT IS!, add the new badge 8)
-						let newBadge = document.createElement('div');
-						newBadge.classList.add('new-badge');
-						newBadge.textContent = 'NEW';
-						medalDiv.appendChild(newBadge);
+					if (medal.Date != null) { // It has a date!, check if its less than a week old
+						let date = new Date(medal.Date);
+						let now = new Date();
+						let diff = now.getTime() - date.getTime();
+						if (diff < 604800000) {
+							// IT IS!, add the new badge 8)
+							let newBadge = document.createElement('div');
+							newBadge.classList.add('new-badge');
+							newBadge.textContent = 'NEW';
+							medalDiv.appendChild(newBadge);
+						}
+					}
+					let medalImg = document.createElement('img');
+					medalImg.setAttribute('data-tippy-content', medal.Name);
+					medalImg.classList.add('medals__grid-medal');
+					medalImg.classList.add('lazy');
+					medalImg.src = medal.Link;
+					medalImg.alt = medal.Name;
+					medalImg.id = `medal_${medal.MedalID}`;
+					medalImg.onload = medalImageLoaded(medalImg);
+					medalImg.onclick = () => {
+						changeState(medal.Name);
+					};
+
+					medalDiv.appendChild(medalImg);
+
+					if (grids[grid_i] == undefined)
+						grids[grid_i] = [];
+					grids[grid_i].push(medalDiv);
+				});
+				let section = document.createElement('section');
+				section.classList.add('osekai__panel');
+
+				// Header
+				let sectionHeader = document.createElement('div');
+				sectionHeader.classList.add('osekai__panel-header');
+
+				let sectionHeaderP = document.createElement('p');
+				sectionHeaderP.textContent = group;
+
+				sectionHeader.appendChild(sectionHeaderP);
+				section.appendChild(sectionHeader);
+				// Header end
+
+				// Medal grid
+				let panelInner = document.createElement('div');
+				panelInner.classList.add('osekai__panel-inner');
+
+				let panelMedalsContainer = document.createElement('div');
+				panelMedalsContainer.classList.add('medals__grid-container');
+
+				for (let i = 0; i < grids.length; i++) {
+					let medalsContainer = document.createElement('div');
+					medalsContainer.classList.add('medals__grid');
+					for (let j = 0; j < grids[i].length; j++)
+						medalsContainer.appendChild(grids[i][j]);
+					panelMedalsContainer.appendChild(medalsContainer);
+
+					if (grids[i + 1] != undefined && grids[i + 1] != null) {
+						let dividerDiv = document.createElement('div');
+						dividerDiv.classList.add('osekai__divider');
+						panelMedalsContainer.appendChild(dividerDiv);
 					}
 				}
-				let medalImg = document.createElement('img');
-				medalImg.setAttribute('data-tippy-content', medal.Name);
-				medalImg.classList.add('medals__grid-medal');
-				medalImg.classList.add('lazy');
-				medalImg.src = medal.Link;
-				medalImg.alt = medal.Name;
-				medalImg.id = `medal_${medal.MedalID}`;
-				medalImg.onload = medalImageLoaded(medalImg);
-				medalImg.onclick = () => {
-					changeState(medal.Name);
-				};
 
-				medalDiv.appendChild(medalImg);
+				panelInner.appendChild(panelMedalsContainer);
+				section.appendChild(panelInner);
+				// Medal grid end
 
-				if (grids[grid_i] == undefined)
-					grids[grid_i] = [];
-				grids[grid_i].push(medalDiv);
+				document.getElementById('oMedalSection').appendChild(section);
 			});
-			let section = document.createElement('section');
-			section.classList.add('osekai__panel');
-
-			// Header
-			let sectionHeader = document.createElement('div');
-			sectionHeader.classList.add('osekai__panel-header');
-
-			let sectionHeaderP = document.createElement('p');
-			sectionHeaderP.textContent = group;
-
-			sectionHeader.appendChild(sectionHeaderP);
-			section.appendChild(sectionHeader);
-			// Header end
-
-			// Medal grid
-			let panelInner = document.createElement('div');
-			panelInner.classList.add('osekai__panel-inner');
-
-			let panelMedalsContainer = document.createElement('div');
-			panelMedalsContainer.classList.add('medals__grid-container');
-
-			for (let i = 0; i < grids.length; i++) {
-				let medalsContainer = document.createElement('div');
-				medalsContainer.classList.add('medals__grid');
-				for (let j = 0; j < grids[i].length; j++)
-					medalsContainer.appendChild(grids[i][j]);
-				panelMedalsContainer.appendChild(medalsContainer);
-
-				if (grids[i + 1] != undefined && grids[i + 1] != null) {
-					let dividerDiv = document.createElement('div');
-					dividerDiv.classList.add('osekai__divider');
-					panelMedalsContainer.appendChild(dividerDiv);
-				}
-			}
-
-			panelInner.appendChild(panelMedalsContainer);
-			section.appendChild(panelInner);
-			// Medal grid end
-
-			document.getElementById('oMedalSection').appendChild(section);
-		});
-
-		tippy('[data-tippy-content]', {
-			appendTo: document.getElementsByClassName('medals__scroller')[0],
-			arrow: true,
-		});
+			setTimeout(() => {
+				tippy('[data-tippy-content]', {
+					appendTo: document.getElementsByClassName('medals__scroller')[0],
+					arrow: true
+				});
+			}, 10);
+		}, 10);
 
 		if (bInit && new URLSearchParams(window.location.search).get('medal') !== null) loadMedal(new URLSearchParams(window.location.search).get('medal'));
 	}
