@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        osekaiplus
 // @namespace   https://pedro.moe
-// @version     1.8.11
+// @version     1.8.12
 // @description Improve user experience on osekai.net (osu! medals website)
 // @author      EXtemeExploit
 // @match       http://osekai.net/*
@@ -16,12 +16,9 @@
 
 	var MEDALS_RARITY_URL = 'https://osekai.net/rankings/api/upload/scripts-rust/down_rarity.php';
 	var MedalsRarityArray = []; // This one is sorted by rarity
-	var MedalsAchievedFilterArray = [];
 
 	document.addEventListener('DOMContentLoaded', () => {
 		// Function to override to fix them or something
-		if (typeof filterAchieved !== 'undefined') filterAchieved = filterAchievedPatched;
-		if (typeof requestMedals !== 'undefined') requestMedals = requestMedalsPatched;
 
 		reloadosekaiPlus();
 	}, { capture: true });
@@ -79,7 +76,6 @@
 				}
 			}
 		}
-
 
 		async function giveColorsToUsersInRankingsLoader() {
 			if (!document.URL.startsWith('https://osekai.net/rankings/?ranking=Medals&type=Users')) return; // Not in correct place
@@ -149,7 +145,6 @@
 		}
 	} // Ready ends here
 
-
 	async function getMedalsCount() {
 		return new Promise((resolve) => {
 			let xhr = new XMLHttpRequest();
@@ -164,187 +159,5 @@
 			};
 			xhr.send();
 		});
-	}
-	async function getMedalsFilterArray() {
-		return new Promise((resolve) => {
-			var xhr = new XMLHttpRequest();
-			xhr.open('POST', 'https://osekai.net/medals/api/filters.php', true);
-			xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-			xhr.onload = () => {
-				if (xhr.status === 200) {
-					let oResponse = JSON.parse(xhr.responseText);
-					resolve(oResponse);
-				}
-			};
-			xhr.send('strSearch=');
-		});
-	}
-
-	async function initColMedals() {
-		return new Promise((resolve) => {
-			var xhr = new XMLHttpRequest();
-			xhr.open('POST', 'https://osekai.net/medals/api/medals.php', true);
-			xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-			xhr.onreadystatechange = function () {
-				var oResponse = getResponse(xhr);
-				if (handleUndefined(oResponse)) return;
-				Object.keys(oResponse).forEach(function (obj) {
-					if (handleUndefined(obj)) return;
-					oResponse[obj].forEach(function (innerObj) {
-						colMedals[innerObj.Name] = innerObj;
-					});
-				});
-				resolve();
-			};
-			xhr.send('strSearch=');
-		});
-	}
-
-	// Patched functions go here, outside the ready scope
-	async function filterAchievedPatched(on) {
-		if (MedalsAchievedFilterArray.length == 0) {
-			MedalsAchievedFilterArray = await getMedalsFilterArray();
-		}
-
-		if (on) {
-			for (let i = 0; i < MedalsAchievedFilterArray.length; i++) {
-				let medalid = MedalsAchievedFilterArray[i];
-				if (document.getElementById('medal_' + medalid)) {
-					document.getElementById('medal_' + medalid).classList.add('medals__medal-filtered');
-				}
-			}
-		} else {
-			let filteredMedals = document.getElementsByClassName('medals__medal-filtered').length;
-			for (let i = 0; i < filteredMedals; i++) {
-				document.getElementsByClassName('medals__medal-filtered')[0].classList.remove('medals__medal-filtered');
-			}
-
-		}
-	}
-
-	async function requestMedalsPatched(bInit, strKey, strValue) {
-		if (bInit || Object.values(colMedals).length == 0)  // Init the colMedals object
-			await initColMedals();
-
-		let filteredMedalsArrayByGroup = [];
-		for (let v of Object.values(colMedals)) {
-			// Match Name, Solution, Description, Instructions and medal id
-			if (v.Name.toLowerCase().includes(strValue.toLowerCase()) ||
-				v.Solution?.toLowerCase().includes(strValue.toLowerCase()) ||
-				v.Description?.toLowerCase().includes(strValue.toLowerCase()) ||
-				v.Instructions?.toLowerCase().includes(strValue.toLowerCase()) ||
-				v.MedalID == parseInt(strValue)) {
-				if (filteredMedalsArrayByGroup[v.Grouping] == null) filteredMedalsArrayByGroup[v.Grouping] = [];
-				filteredMedalsArrayByGroup[v.Grouping].push(v);
-			}
-		}
-
-		setTimeout(() => {
-			document.getElementById('oMedalSection').textContent = '';
-			Object.keys(filteredMedalsArrayByGroup).forEach(async (group) => {
-				let grids = [];
-				let totalMedals = 0;
-				let medalsPromise = new Promise((resolve) => {
-					filteredMedalsArrayByGroup[group].forEach((medal) => {
-						let medal_grid_i = 0;
-						switch (medal.Restriction) {
-							case 'NULL': medal_grid_i = 0; break;
-							case 'osu': medal_grid_i = 1; break;
-							case 'taiko': medal_grid_i = 2; break;
-							case 'fruits': medal_grid_i = 3; break;
-							case 'mania': medal_grid_i = 4; break;
-						}
-
-						let medalDiv = document.createElement('div');
-						medalDiv.classList.add('medals__grid-medal-container');
-
-						if (medal.Date != null) { // It has a date!, check if its less than a week old
-							let date = new Date(medal.Date);
-							let now = new Date();
-							let diff = now.getTime() - date.getTime();
-							if (diff < 604800000) {
-								// IT IS!, add the new badge 8)
-								let newBadge = document.createElement('div');
-								newBadge.classList.add('new-badge');
-								newBadge.textContent = 'NEW';
-								medalDiv.appendChild(newBadge);
-							}
-						}
-						let medalImg = document.createElement('img');
-						medalImg.setAttribute('data-tippy-content', medal.Name);
-						medalImg.classList.add('medals__grid-medal');
-						medalImg.classList.add('lazy');
-						medalImg.src = medal.Link;
-						medalImg.alt = medal.Name;
-						medalImg.id = `medal_${medal.MedalID}`;
-						medalImg.onload = medalImageLoaded(medalImg);
-						medalImg.onclick = () => {
-							changeState(medal.Name);
-						};
-
-						medalDiv.appendChild(medalImg);
-
-						if (typeof grids[medal_grid_i] == 'undefined')
-							grids[medal_grid_i] = [];
-						grids[medal_grid_i].push(medalDiv);
-						totalMedals++;
-						if (totalMedals == filteredMedalsArrayByGroup[group].length)
-							resolve();
-					});
-				});
-
-				let section = document.createElement('section');
-				section.classList.add('osekai__panel');
-
-				// Header
-				let sectionHeader = document.createElement('div');
-				sectionHeader.classList.add('osekai__panel-header');
-
-				let sectionHeaderP = document.createElement('p');
-				sectionHeaderP.textContent = group;
-
-				sectionHeader.appendChild(sectionHeaderP);
-				section.appendChild(sectionHeader);
-				// Header end
-
-				// Medal grid
-				let panelInner = document.createElement('div');
-				panelInner.classList.add('osekai__panel-inner');
-
-				let panelMedalsContainer = document.createElement('div');
-				panelMedalsContainer.classList.add('medals__grid-container');
-
-				await medalsPromise;
-
-				for (let i = 0; i < grids.length; i++) {
-					if (grids[i] == undefined) continue;
-					let medalsContainer = document.createElement('div');
-					medalsContainer.classList.add('medals__grid');
-					for (let j = 0; j < grids[i].length; j++)
-						medalsContainer.appendChild(grids[i][j]);
-					panelMedalsContainer.appendChild(medalsContainer);
-
-					if (grids.length - 1 != i) {
-						let dividerDiv = document.createElement('div');
-						dividerDiv.classList.add('osekai__divider');
-						panelMedalsContainer.appendChild(dividerDiv);
-					}
-				}
-
-				panelInner.appendChild(panelMedalsContainer);
-				section.appendChild(panelInner);
-				// Medal grid end
-
-				document.getElementById('oMedalSection').appendChild(section);
-				filterAchieved(document.getElementById('styled-checkbox-1').checked);
-			});
-		}, 0);
-		tippy('[data-tippy-content]', {
-			appendTo: document.getElementById('oMedalSection'),
-			arrow: true
-		});
-
-
-		if (bInit && new URLSearchParams(window.location.search).get('medal') !== null) loadMedal(new URLSearchParams(window.location.search).get('medal'));
 	}
 })();
