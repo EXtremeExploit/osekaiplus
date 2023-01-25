@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        osekaiplus
 // @namespace   https://pedro.moe
-// @version     1.8.12
+// @version     1.8.13
 // @description Improve user experience on osekai.net (osu! medals website)
 // @author      EXtemeExploit
 // @match       http://osekai.net/*
@@ -15,6 +15,7 @@
 	'use strict';
 
 	var MEDALS_RARITY_URL = 'https://osekai.net/rankings/api/upload/scripts-rust/down_rarity.php';
+	var NeedWaitOnRarityRequest = false;
 	var MedalsRarityArray = []; // This one is sorted by rarity
 
 	document.addEventListener('DOMContentLoaded', () => {
@@ -54,6 +55,7 @@
 
 		async function giveMedalsRarityRankingCountLoader() {
 			if (document.URL.startsWith('https://osekai.net/rankings/?ranking=Medals&type=Rarity')) {
+				if (NeedWaitOnRarityRequest) return;
 				// Want to get medals rarity count first, await it so no race condition
 				if (MedalsRarityArray.length == 0) // Only make the request if needed
 					MedalsRarityArray = await getMedalsCount();
@@ -125,6 +127,7 @@
 
 		async function giveMedalsRarityCountLoader() {
 			if (document.URL.startsWith('https://osekai.net/medals/?')) {
+				if (NeedWaitOnRarityRequest) return;
 				// Want to get medals rarity count first, await it so no race condition
 				if (MedalsRarityArray.length == 0)// Only make the request if needed
 					MedalsRarityArray = await getMedalsCount();
@@ -146,12 +149,14 @@
 	} // Ready ends here
 
 	async function getMedalsCount() {
+		NeedWaitOnRarityRequest = true;
 		return new Promise((resolve) => {
 			let xhr = new XMLHttpRequest();
 			xhr.open('GET', MEDALS_RARITY_URL, true);
 			xhr.onload = () => {
 				if (xhr.status === 200) {
 					let oResponse = JSON.parse(xhr.responseText);
+					NeedWaitOnRarityRequest = false;
 					resolve(oResponse.sort((a, b) => {
 						return a.count - b.count;
 					}));
