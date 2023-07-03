@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        osekaiplus
 // @namespace   https://pedro.moe
-// @version     1.8.13
+// @version     1.8.14
 // @description Improve user experience on osekai.net (osu! medals website)
 // @author      EXtemeExploit
 // @match       http://osekai.net/*
@@ -29,10 +29,10 @@
 
 		setInterval(loadIntervalPatches, 250);
 		function loadIntervalPatches() {
-			giveMedalsRarityRankingCountLoader();
-			giveColorsToUsersInRankingsLoader();
+			RankingMedalsRarityCountLoader();
+			RankingsUsersColorsLoader();
 			profilesPatchesLoader();
-			giveMedalsRarityCountLoader();
+			MedalsRarityAndCountLoader();
 		}
 
 		simplifyRescrictionBanner(); // This doesn't need an interval
@@ -53,17 +53,17 @@
 			}
 		}
 
-		async function giveMedalsRarityRankingCountLoader() {
+		async function RankingMedalsRarityCountLoader() {
 			if (document.URL.startsWith('https://osekai.net/rankings/?ranking=Medals&type=Rarity')) {
 				if (NeedWaitOnRarityRequest) return;
 				// Want to get medals rarity count first, await it so no race condition
 				if (MedalsRarityArray.length == 0) // Only make the request if needed
 					MedalsRarityArray = await getMedalsCount();
-				giveMedalsRarityRankingCount();
+				RankingMedalsRarityCount();
 			}
 		}
 
-		async function giveMedalsRarityRankingCount() {
+		async function RankingMedalsRarityCount() {
 			if (document.getElementsByClassName('osekai__pagination_item-active')[0] == null) return; // page isn't finished loading yet
 			let len = document.getElementsByClassName('rankings__cascade__content').length;
 			for (let i = 0; i < len; i++) {
@@ -79,18 +79,31 @@
 			}
 		}
 
-		async function giveColorsToUsersInRankingsLoader() {
+		async function RankingsUsersColorsLoader() {
 			if (!document.URL.startsWith('https://osekai.net/rankings/?ranking=Medals&type=Users')) return; // Not in correct place
-			if (!document.getElementsByClassName('strong user_hover_v2').length > 0) return; // users didn't load yet
-			if (!document.getElementsByClassName('strong user_hover_v2')[0].style.color == '') return; // user is already colored
-			giveColorsToUsersInRankings();
+			if (document.getElementsByClassName('rankings__cascade__content').length == 0) return; // Rankings didnt load yet
+
+			let contents = document.getElementsByClassName('rankings__cascade__content');
+			if (contents.childElementCount < 2) return;
+			if (contents[1].childElementCount < 1) return;
+			if (contents[1].children[0].childElementCount < 2) return;
+			if (contents[1].children[0].children[1].style.color != '') return;
+			RankingsUsersColors();
 		}
 
+		async function RankingsUsersColors() {
+			let contentCount = document.getElementsByClassName('rankings__cascade__content').length;
+			for (let i = 0; i < contentCount; i++) {
+				let content = document.getElementsByClassName('rankings__cascade__content')[i];
+				if (content.childElementCount == 1 && content.children[0].outerHTML.startsWith('<p')) {
+					let p = content.children[0];
+					if (p.childElementCount == 4 && p.children[1].outerHTML.startsWith('<a')) {
+						let a = p.children[1];
 
-		async function giveColorsToUsersInRankings() {
-			let usersCount = document.getElementsByClassName('strong user_hover_v2').length;
-			for (let i = 0; i < usersCount; i++) {
-				document.getElementsByClassName('strong user_hover_v2')[i].style.color = 'rgb(var(--maincol))';
+						a.style.color = 'rgb(var(--maincol))';
+						a.style.textDecoration = 'none';
+					}
+				}
 			}
 		}
 
@@ -125,25 +138,23 @@
 			}
 		}
 
-		async function giveMedalsRarityCountLoader() {
+		async function MedalsRarityAndCountLoader() {
 			if (document.URL.startsWith('https://osekai.net/medals/?')) {
 				if (NeedWaitOnRarityRequest) return;
 				// Want to get medals rarity count first, await it so no race condition
 				if (MedalsRarityArray.length == 0)// Only make the request if needed
 					MedalsRarityArray = await getMedalsCount();
-				giveMedalsRarityCount();
+				MedalsRarityAndCount();
 			}
 		}
 
-		function giveMedalsRarityCount() {
+		function MedalsRarityAndCount() {
 			if (document.getElementById('strMedalRarity') && document.getElementById('strMedalRarity').innerHTML.endsWith('%')) {
 				let params = new URLSearchParams(window.location.search);
-				let medalID = colMedals[params.get('medal')].MedalID;
-				let result = MedalsRarityArray.filter((e) => {
-					return e.id == medalID;
-				});
+				let medalID = parseInt(colMedals[params.get('medal')].MedalID);
+				let result = MedalsRarityArray.find((e) => e.id == medalID);
 				let rarityRanking = MedalsRarityArray.map((medal) => medal.id).indexOf(medalID) + 1;
-				document.getElementById('strMedalRarity').innerHTML += ` (${result[0].count} #${rarityRanking})`;
+				document.getElementById('strMedalRarity').innerHTML += ` (${result.count} #${rarityRanking})`;
 			}
 		}
 	} // Ready ends here
